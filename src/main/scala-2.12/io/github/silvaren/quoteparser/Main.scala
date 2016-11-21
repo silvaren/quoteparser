@@ -2,8 +2,6 @@ package io.github.silvaren.quoteparser
 
 import com.github.nscala_time.time.Imports._
 
-import scala.util.matching.Regex
-
 object Main {
   val formatter = DateTimeFormat.forPattern("yyyyMMdd").withZone(DateTimeZone.forID("America/Sao_Paulo"))
 
@@ -20,7 +18,7 @@ object Main {
 
   def isOption(symbol: String): Boolean = {
     val symbolPrefix = symbol.substring(0, 4)
-    //matches all symbols with up to four letters, one A to X letter and at least one digit at the end.
+    //matches all symbols with up to four letters plus one A to X letter and plus at least one digit at the end.
     val optionMatcher = s"ˆ${symbolPrefix}[A-X][\\d]+$$".r
     optionMatcher.findFirstIn(symbol).isDefined
   }
@@ -41,10 +39,15 @@ object Main {
     val trades = quote.substring(147, 152).toInt
 
     if (isOption(stockSymbol)) {
+      val exerciseDate = dateParser(quote, 202);
+      val strikePrice = priceParser(quote, 188);
+      println("OPTION",stockSymbol, strikePrice, exerciseDate, date,
+        openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
     }
     else {
+      println(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
     }
-    println(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
+
   }
 
 }
