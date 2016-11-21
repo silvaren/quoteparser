@@ -4,7 +4,7 @@ import com.github.nscala_time.time.Imports._
 
 import scala.annotation.tailrec
 
-object Main {
+object QuoteParser {
   val formatter = DateTimeFormat.forPattern("yyyyMMdd").withZone(DateTimeZone.forID("America/Sao_Paulo"))
 
   def priceParser(strLine: String, integerStart: Int): BigDecimal = {
@@ -20,8 +20,8 @@ object Main {
 
   def isOption(symbol: String): Boolean = {
     val symbolPrefix = symbol.substring(0, 4)
-    //matches all symbols with up to four letters plus one A to X letter and plus at least one digit at the end.
-    val optionMatcher = s"^${symbolPrefix}[A-X][\\d]+$$".r
+    // matches all symbols with up to four letters plus one A to X letter and plus at least one digit at the end.
+    val optionMatcher = s"^$symbolPrefix[A-X][\\d]+$$".r
     optionMatcher.findFirstIn(symbol).isDefined
   }
 
@@ -29,7 +29,7 @@ object Main {
   def loopStream(sc: java.util.Scanner, acc: List[Quote]): List[Quote] = {
     if (sc.hasNext) {
       val quote = sc.nextLine()
-      if (sc.hasNext) {
+      if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
         val stockSymbol = quote.substring(12, 24).trim
         val date = dateParser(quote, 2)
         val closePrice = priceParser(quote, 108)
@@ -40,8 +40,8 @@ object Main {
         val trades = quote.substring(147, 152).toLong
 
         if (isOption(stockSymbol)) {
-          val exerciseDate = dateParser(quote, 202);
-          val strikePrice = priceParser(quote, 188);
+          val exerciseDate = dateParser(quote, 202)
+          val strikePrice = priceParser(quote, 188)
           val optionQuote = OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
             trades, strikePrice, exerciseDate)
           loopStream(sc, optionQuote :: acc)
@@ -64,20 +64,3 @@ object Main {
   }
 
 }
-
-trait Quote {
-  def stockSymbol: String
-  def date: DateTime
-  def openPrice: BigDecimal
-  def highPrice: BigDecimal
-  def lowPrice: BigDecimal
-  def closePrice: BigDecimal
-  def tradedVolume: Long
-  def trades: Long
-}
-
-case class StockQuote(stockSymbol: String, date: DateTime, openPrice: BigDecimal, highPrice: BigDecimal,
-                      lowPrice: BigDecimal, closePrice: BigDecimal, tradedVolume: Long, trades: Long) extends Quote
-case class OptionQuote(stockSymbol: String, date: DateTime, openPrice: BigDecimal, highPrice: BigDecimal,
-                       lowPrice: BigDecimal, closePrice: BigDecimal, tradedVolume: Long, trades: Long,
-                       strikePrice: BigDecimal, exerciseDate: DateTime) extends Quote
