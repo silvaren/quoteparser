@@ -25,31 +25,36 @@ object QuoteParser {
     optionMatcher.findFirstIn(symbol).isDefined
   }
 
+  def parseLine(quote: String): Quote = {
+    val stockSymbol = quote.substring(12, 24).trim
+    val date = dateParser(quote, 2)
+    val closePrice = priceParser(quote, 108)
+    val highPrice = priceParser(quote, 69)
+    val lowPrice = priceParser(quote, 82)
+    val openPrice = priceParser(quote, 56)
+    val tradedVolume = quote.substring(152, 170).toLong
+    val trades = quote.substring(147, 152).toLong
+
+    if (isOption(stockSymbol)) {
+      val exerciseDate = dateParser(quote, 202)
+      val strikePrice = priceParser(quote, 188)
+      val optionQuote = OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
+        trades, strikePrice, exerciseDate)
+      optionQuote
+    }
+    else {
+      val stockQuote = StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
+      stockQuote
+    }
+  }
+
   @tailrec
-  def loopStream(sc: java.util.Scanner, acc: List[Quote]): List[Quote] = {
+  def parseStream(sc: java.util.Scanner, acc: List[Quote]): List[Quote] = {
     if (sc.hasNext) {
       val quote = sc.nextLine()
       if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
-        val stockSymbol = quote.substring(12, 24).trim
-        val date = dateParser(quote, 2)
-        val closePrice = priceParser(quote, 108)
-        val highPrice = priceParser(quote, 69)
-        val lowPrice = priceParser(quote, 82)
-        val openPrice = priceParser(quote, 56)
-        val tradedVolume = quote.substring(152, 170).toLong
-        val trades = quote.substring(147, 152).toLong
-
-        if (isOption(stockSymbol)) {
-          val exerciseDate = dateParser(quote, 202)
-          val strikePrice = priceParser(quote, 188)
-          val optionQuote = OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
-            trades, strikePrice, exerciseDate)
-          loopStream(sc, optionQuote :: acc)
-        }
-        else {
-          val stockQuote = StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
-          loopStream(sc, stockQuote :: acc)
-        }
+        val parsedQuote = parseLine(quote)
+        parseStream(sc, parsedQuote :: acc)
       } else acc
     } else acc
   }
@@ -59,8 +64,15 @@ object QuoteParser {
 
     sc.nextLine() //skip first line
 
-    val quotes = loopStream(sc, List())
-    quotes.foreach{ case q: OptionQuote => println(q); case _ => }
+    try {
+      val quotes = parseStream(sc, List())
+      quotes.foreach{ case q: OptionQuote => println(q); case _ => }
+    } catch {
+      case ex: Exception => {
+        sys.error("Error parsing the quote stream!")
+        sys.exit(-1)
+      }
+    }
   }
 
 }
