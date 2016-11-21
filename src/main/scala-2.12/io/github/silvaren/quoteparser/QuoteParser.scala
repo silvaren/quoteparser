@@ -38,13 +38,11 @@ object QuoteParser {
     if (isOption(stockSymbol)) {
       val exerciseDate = dateParser(quote, 202)
       val strikePrice = priceParser(quote, 188)
-      val optionQuote = OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
+      OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
         trades, strikePrice, exerciseDate)
-      optionQuote
     }
     else {
-      val stockQuote = StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
-      stockQuote
+      StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
     }
   }
 
