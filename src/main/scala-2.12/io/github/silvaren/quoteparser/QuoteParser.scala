@@ -1,5 +1,6 @@
 package io.github.silvaren.quoteparser
 
+import com.amazonaws.services.dynamodbv2.document.Item
 import com.github.nscala_time.time.Imports._
 
 import scala.annotation.tailrec
@@ -51,10 +52,29 @@ object QuoteParser {
     if (sc.hasNext) {
       val quote = sc.nextLine()
       if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
-        val parsedQuote = parseLine(quote)
+      val parsedQuote = parseLine(quote)
         parseStream(sc, parsedQuote :: acc)
       } else acc
     } else acc
+  }
+
+  def createDbQuotes(quotes: List[Quote]): List[Item] = {
+    quotes.map(q => {
+      val item = new Item()
+        .withPrimaryKey("Symbol", q.stockSymbol, "Date", q.date.toString)
+        .withNumber("OpenPrice", q.openPrice)
+        .withNumber("HighPrice", q.highPrice)
+        .withNumber("LowPrice", q.lowPrice)
+        .withNumber("ClosePrice", q.closePrice)
+        .withNumber("TradedVolume", q.tradedVolume)
+        .withNumber("Trades", q.trades)
+
+      q match {
+        case sq: StockQuote => item
+        case oq: OptionQuote => item.withNumber("StrikePrice", oq.strikePrice).
+          withString("ExerciseDate", oq.exerciseDate.toString)
+      }
+    })
   }
 
   def main(args: Array[String]) {
@@ -62,15 +82,14 @@ object QuoteParser {
 
     sc.nextLine() //skip first line
 
-    try {
-      val quotes = parseStream(sc, List())
-      quotes.foreach{ case q: OptionQuote => println(q); case _ => }
-    } catch {
-      case ex: Exception => {
-        sys.error("Error parsing the quote stream!")
-        sys.exit(-1)
-      }
-    }
+    val quotes = parseStream(sc, List())
+
+    val dbQuotes = createDbQuotes(quotes)
+
+    println("Parsed stock quotes: " + quotes.count{case q: StockQuote => true; case _ => false})
+    println("Parsed option quotes: " + quotes.count{case q: OptionQuote => true; case _ => false})
+    println("Total parsed quotes: " + quotes.size)
+    println("DB quotes: " + dbQuotes.size)
   }
 
 }
