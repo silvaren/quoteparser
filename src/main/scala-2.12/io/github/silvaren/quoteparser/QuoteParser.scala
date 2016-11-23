@@ -1,5 +1,7 @@
 package io.github.silvaren.quoteparser
 
+import java.io.InputStream
+
 import com.github.nscala_time.time.Imports._
 
 import scala.annotation.tailrec
@@ -51,26 +53,21 @@ object QuoteParser {
     if (sc.hasNext) {
       val quote = sc.nextLine()
       if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
-        val parsedQuote = parseLine(quote)
+      val parsedQuote = parseLine(quote)
         parseStream(sc, parsedQuote :: acc)
       } else acc
     } else acc
   }
 
-  def main(args: Array[String]) {
+  def parse(inputStream: InputStream): List[Quote] = {
     val sc = new java.util.Scanner (System.in)
-
     sc.nextLine() //skip first line
+    parseStream(sc, List())
+  }
 
-    try {
-      val quotes = parseStream(sc, List())
-      quotes.foreach{ case q: OptionQuote => println(q); case _ => }
-    } catch {
-      case ex: Exception => {
-        sys.error("Error parsing the quote stream!")
-        sys.exit(-1)
-      }
-    }
+  def main(args: Array[String]) {
+    val quotes = parse(System.in)
+    quotes.foreach(q => println(q))
   }
 
 }
