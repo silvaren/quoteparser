@@ -60,9 +60,9 @@ object QuoteParser {
   }
 
   def parse(inputStream: InputStream): List[Quote] = {
-    val sc = new java.util.Scanner (System.in)
+    val sc = new java.util.Scanner(inputStream)
     sc.nextLine() //skip first line
-    parseStream(sc, List())
+    parseStream(sc, List()).reverse
   }
 
   def main(args: Array[String]) {
