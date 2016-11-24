@@ -1,11 +1,10 @@
 package io.github.silvaren.quoteparser
 
 import java.io.ByteArrayInputStream
-import java.nio.charset.StandardCharsets
 
 import org.joda.time.{DateTime, DateTimeZone}
-import org.scalatest.FunSuite
 import org.junit.runner.RunWith
+import org.scalatest.FunSuite
 import org.scalatest.junit.JUnitRunner
 
 @RunWith(classOf[JUnitRunner])
