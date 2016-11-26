@@ -15,12 +15,12 @@ object QuoteParser {
     BigDecimal(priceStr)
   }
 
-  private[this]def dateParser(strLine: String, dateStart: Int): DateTime = {
+  private[this] def dateParser(strLine: String, dateStart: Int): DateTime = {
     val parsedDate = formatter.parseDateTime(strLine.substring(dateStart,dateStart + 8))
     parsedDate.withHour(18)
   }
 
-  private[this]def isOption(symbol: String): Boolean = {
+  private[this] def isOption(symbol: String): Boolean = {
     val symbolPrefix = symbol.substring(0, 4)
     // matches all symbols with up to four letters plus one A to X letter and plus at least one digit at the end.
     val optionMatcher = s"^$symbolPrefix[A-X][\\d]+$$".r
@@ -63,11 +63,6 @@ object QuoteParser {
     val sc = new java.util.Scanner(inputStream)
     sc.nextLine() //skip first line
     parseStream(sc, List()).reverse
-  }
-
-  def main(args: Array[String]) {
-    val quotes = parse(System.in)
-    quotes.foreach(q => println(q))
   }
 
 }
