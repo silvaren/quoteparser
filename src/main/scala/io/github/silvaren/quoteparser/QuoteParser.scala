@@ -49,20 +49,20 @@ object QuoteParser {
   }
 
   @tailrec
-  private[this] def parseStream(sc: java.util.Scanner, acc: List[Quote]): List[Quote] = {
+  private[this] def parseStream(sc: java.util.Scanner, acc: Seq[Quote]): Seq[Quote] = {
     if (sc.hasNext) {
       val quote = sc.nextLine()
       if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
       val parsedQuote = parseLine(quote)
-        parseStream(sc, parsedQuote :: acc)
+        parseStream(sc, parsedQuote +: acc)
       } else acc
     } else acc
   }
 
-  def parse(inputStream: InputStream): List[Quote] = {
+  def parse(inputStream: InputStream): Seq[Quote] = {
     val sc = new java.util.Scanner(inputStream)
     sc.nextLine() //skip first line
-    parseStream(sc, List()).reverse
+    parseStream(sc, Seq()).reverse
   }
 
 }

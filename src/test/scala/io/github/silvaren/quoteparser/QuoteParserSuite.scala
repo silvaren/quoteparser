@@ -54,7 +54,7 @@ class QuoteParserSuite extends FunSuite {
 
     val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
     val parsedQuotes = QuoteParser.parse(inputStream)
-    assert(parsedQuotes == List(ExpectedStockQuote, ExpectedOptionQuote))
+    assert(parsedQuotes == Seq(ExpectedStockQuote, ExpectedOptionQuote))
   }
 
 }
