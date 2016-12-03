@@ -37,15 +37,15 @@ class QuoteParserSuite extends FunSuite {
   }
 
   test("stock quote is correctly parsed") {
-    val parsedQuote = QuoteParser.parseLine(StockLine)
+    val parsedQuote = QuoteParser.parseLine(StockLine, Set(10))
 
-    assert(parsedQuote == ExpectedStockQuote)
+    assert(parsedQuote == Some(ExpectedStockQuote))
   }
 
   test("option quote is correctly parsed") {
-    val parsedQuote = QuoteParser.parseLine(OptionLine)
+    val parsedQuote = QuoteParser.parseLine(OptionLine, Set(70))
 
-    assert(parsedQuote == ExpectedOptionQuote)
+    assert(parsedQuote == Some(ExpectedOptionQuote))
   }
 
   test("parsing is correctly ignoring first and last lines of the stream") {
@@ -53,8 +53,17 @@ class QuoteParserSuite extends FunSuite {
       "99COTAHIST.2015BOVESPA 2015123000000414179"
 
     val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
-    val parsedQuotes = QuoteParser.parse(inputStream)
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(10, 70))
     assert(parsedQuotes == Seq(ExpectedStockQuote, ExpectedOptionQuote))
+  }
+
+  test("parsing is correctly ignoring non selected markets") {
+    val quoteStream = s"00COTAHIST.2015BOVESPA 20151230\n${StockLine}\n${OptionLine}\n" +
+      "99COTAHIST.2015BOVESPA 2015123000000414179"
+
+    val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(70))
+    assert(parsedQuotes == Seq(ExpectedOptionQuote))
   }
 
 }

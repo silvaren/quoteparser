@@ -4,8 +4,6 @@ import java.io.InputStream
 
 import com.github.nscala_time.time.Imports._
 
-import scala.annotation.tailrec
-
 object QuoteParser {
   val formatter = DateTimeFormat.forPattern("yyyyMMdd").withZone(DateTimeZone.forID("America/Sao_Paulo"))
 
@@ -27,41 +25,51 @@ object QuoteParser {
     optionMatcher.findFirstIn(symbol).isDefined
   }
 
-  def parseLine(quote: String): Quote = {
-    val stockSymbol = quote.substring(12, 24).trim
-    val date = dateParser(quote, 2)
-    val closePrice = priceParser(quote, 108)
-    val highPrice = priceParser(quote, 69)
-    val lowPrice = priceParser(quote, 82)
-    val openPrice = priceParser(quote, 56)
-    val tradedVolume = quote.substring(152, 170).toLong
-    val trades = quote.substring(147, 152).toLong
+  def isMarketTypeSelected(marketType: Int, selectedMarketTypes: Set[Int]): Boolean =
+    selectedMarketTypes.contains(marketType)
 
-    if (isOption(stockSymbol)) {
-      val exerciseDate = dateParser(quote, 202)
-      val strikePrice = priceParser(quote, 188)
-      OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
-        trades, strikePrice, exerciseDate)
-    }
-    else {
-      StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades)
-    }
+  def parseLine(quote: String, selectedMarketTypes: Set[Int]): Option[Quote] = {
+    val marketType = quote.substring(24, 27).toInt
+    if (isMarketTypeSelected(marketType, selectedMarketTypes)) {
+      val stockSymbol = quote.substring(12, 24).trim
+      val date = dateParser(quote, 2)
+      val closePrice = priceParser(quote, 108)
+      val highPrice = priceParser(quote, 69)
+      val lowPrice = priceParser(quote, 82)
+      val openPrice = priceParser(quote, 56)
+      val tradedVolume = quote.substring(152, 170).toLong
+      val trades = quote.substring(147, 152).toLong
+
+      if (isOption(stockSymbol)) {
+        val exerciseDate = dateParser(quote, 202)
+        val strikePrice = priceParser(quote, 188)
+        Option(OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
+          trades, strikePrice, exerciseDate))
+      }
+      else {
+        Option(StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades))
+      }
+    } else
+      None
   }
 
-  private[this] def parseStream(sc: java.util.Scanner): Stream[Quote] = {
+  private[this] def parseStream(sc: java.util.Scanner, selectedMarketTypes: Set[Int]): Stream[Quote] = {
     if (sc.hasNext) {
       val quote = sc.nextLine()
       if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
-        val parsedQuote = parseLine(quote)
-        parsedQuote #:: parseStream(sc)
+        val parsedQuote = parseLine(quote, selectedMarketTypes)
+        parsedQuote match {
+          case Some(quote) => quote #:: parseStream(sc, selectedMarketTypes)
+          case None => parseStream(sc, selectedMarketTypes)
+        }
       } else Stream()
     } else Stream()
   }
 
-  def parse(inputStream: InputStream): Stream[Quote] = {
+  def parse(inputStream: InputStream, selectedMarketTypes: Set[Int]): Stream[Quote] = {
     val sc = new java.util.Scanner(inputStream)
     sc.nextLine() //skip first line
-    parseStream(sc)
+    parseStream(sc, selectedMarketTypes)
   }
 
 }
