@@ -28,10 +28,13 @@ object QuoteParser {
   def isMarketTypeSelected(marketType: Int, selectedMarketTypes: Set[Int]): Boolean =
     selectedMarketTypes.contains(marketType)
 
-  def parseLine(quote: String, selectedMarketTypes: Set[Int]): Option[Quote] = {
+  def isSymbolSelected(symbol: String, selectedSymbols: Set[String]): Boolean =
+    selectedSymbols.exists( s => symbol.contains(s))
+
+  def parseLine(quote: String, selectedMarketTypes: Set[Int], selectedSymbols: Set[String]): Option[Quote] = {
     val marketType = quote.substring(24, 27).toInt
-    if (isMarketTypeSelected(marketType, selectedMarketTypes)) {
-      val stockSymbol = quote.substring(12, 24).trim
+    val symbol = quote.substring(12, 24).trim
+    if (isMarketTypeSelected(marketType, selectedMarketTypes) && isSymbolSelected(symbol, selectedSymbols)) {
       val date = dateParser(quote, 2)
       val closePrice = priceParser(quote, 108)
       val highPrice = priceParser(quote, 69)
@@ -40,36 +43,37 @@ object QuoteParser {
       val tradedVolume = quote.substring(152, 170).toLong
       val trades = quote.substring(147, 152).toLong
 
-      if (isOption(stockSymbol)) {
+      if (isOption(symbol)) {
         val exerciseDate = dateParser(quote, 202)
         val strikePrice = priceParser(quote, 188)
-        Option(OptionQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
+        Option(OptionQuote(symbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume,
           trades, strikePrice, exerciseDate))
       }
       else {
-        Option(StockQuote(stockSymbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades))
+        Option(StockQuote(symbol, date, openPrice, highPrice, lowPrice, closePrice, tradedVolume, trades))
       }
     } else
       None
   }
 
-  private[this] def parseStream(sc: java.util.Scanner, selectedMarketTypes: Set[Int]): Stream[Quote] = {
+  private[this] def parseStream(sc: java.util.Scanner, selectedMarketTypes: Set[Int],
+                                selectedSymbols: Set[String]): Stream[Quote] = {
     if (sc.hasNext) {
       val quote = sc.nextLine()
       if (sc.hasNext) { // this checks that we are not parsing the last line which does not contains quotes
-        val parsedQuote = parseLine(quote, selectedMarketTypes)
+        val parsedQuote = parseLine(quote, selectedMarketTypes, selectedSymbols)
         parsedQuote match {
-          case Some(quote) => quote #:: parseStream(sc, selectedMarketTypes)
-          case None => parseStream(sc, selectedMarketTypes)
+          case Some(quote) => quote #:: parseStream(sc, selectedMarketTypes, selectedSymbols)
+          case None => parseStream(sc, selectedMarketTypes, selectedSymbols)
         }
       } else Stream()
     } else Stream()
   }
 
-  def parse(inputStream: InputStream, selectedMarketTypes: Set[Int]): Stream[Quote] = {
+  def parse(inputStream: InputStream, selectedMarketTypes: Set[Int], selectedSymbols: Set[String]): Stream[Quote] = {
     val sc = new java.util.Scanner(inputStream)
     sc.nextLine() //skip first line
-    parseStream(sc, selectedMarketTypes)
+    parseStream(sc, selectedMarketTypes, selectedSymbols)
   }
 
 }

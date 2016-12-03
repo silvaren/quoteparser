@@ -18,6 +18,10 @@ class QuoteParserSuite extends FunSuite {
     "0000005000000000000720000000000082000000000008100000000000821429100000000004449220000000000321699010000000000"+
     "0086102015011900000010000000000000BRPETRACNPR6184"
 
+  val OtherSymbolQuote: String = "012015010202VALE5       010PETROBRAS   PN           R$  000000000099900000000009990000"+
+    "000000936000000000095700000000009360000000000936000000000094039738000000000048837200000000046754792500000000"+
+    "000000009999123100000010000000000000BRPETRACNPR6184"
+
   val ExpectedStockQuote = StockQuote("PETR4", buildDate(2015, 1, 2), BigDecimal("9.99"), BigDecimal("9.99"),
     BigDecimal("9.36"), BigDecimal("9.36"), 48837200, 39738)
 
@@ -37,13 +41,13 @@ class QuoteParserSuite extends FunSuite {
   }
 
   test("stock quote is correctly parsed") {
-    val parsedQuote = QuoteParser.parseLine(StockLine, Set(Regular.code))
+    val parsedQuote = QuoteParser.parseLine(StockLine, Set(Regular.code), Set("PETR"))
 
     assert(parsedQuote == Some(ExpectedStockQuote))
   }
 
   test("option quote is correctly parsed") {
-    val parsedQuote = QuoteParser.parseLine(OptionLine, Set(CallOption.code))
+    val parsedQuote = QuoteParser.parseLine(OptionLine, Set(CallOption.code), Set("PETR"))
 
     assert(parsedQuote == Some(ExpectedOptionQuote))
   }
@@ -53,7 +57,7 @@ class QuoteParserSuite extends FunSuite {
       "99COTAHIST.2015BOVESPA 2015123000000414179"
 
     val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
-    val parsedQuotes = QuoteParser.parse(inputStream, Set(Regular.code, CallOption.code))
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(Regular.code, CallOption.code), Set("PETR"))
     assert(parsedQuotes == Seq(ExpectedStockQuote, ExpectedOptionQuote))
   }
 
@@ -62,8 +66,17 @@ class QuoteParserSuite extends FunSuite {
       "99COTAHIST.2015BOVESPA 2015123000000414179"
 
     val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
-    val parsedQuotes = QuoteParser.parse(inputStream, Set(CallOption.code))
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(CallOption.code), Set("PETR"))
     assert(parsedQuotes == Seq(ExpectedOptionQuote))
+  }
+
+  test("parsing is correctly ignoring non selected symbols") {
+    val quoteStream = s"00COTAHIST.2015BOVESPA 20151230\n${StockLine}\n${OptionLine}\n${OtherSymbolQuote}\n" +
+      "99COTAHIST.2015BOVESPA 2015123000000414179"
+
+    val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(Regular.code, CallOption.code), Set("PETR"))
+    assert(parsedQuotes == Seq(ExpectedStockQuote, ExpectedOptionQuote))
   }
 
 }
