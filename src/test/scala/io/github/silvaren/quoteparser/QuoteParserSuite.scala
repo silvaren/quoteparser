@@ -37,13 +37,13 @@ class QuoteParserSuite extends FunSuite {
   }
 
   test("stock quote is correctly parsed") {
-    val parsedQuote = QuoteParser.parseLine(StockLine, Set(10))
+    val parsedQuote = QuoteParser.parseLine(StockLine, Set(Regular.code))
 
     assert(parsedQuote == Some(ExpectedStockQuote))
   }
 
   test("option quote is correctly parsed") {
-    val parsedQuote = QuoteParser.parseLine(OptionLine, Set(70))
+    val parsedQuote = QuoteParser.parseLine(OptionLine, Set(CallOption.code))
 
     assert(parsedQuote == Some(ExpectedOptionQuote))
   }
@@ -53,7 +53,7 @@ class QuoteParserSuite extends FunSuite {
       "99COTAHIST.2015BOVESPA 2015123000000414179"
 
     val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
-    val parsedQuotes = QuoteParser.parse(inputStream, Set(10, 70))
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(Regular.code, CallOption.code))
     assert(parsedQuotes == Seq(ExpectedStockQuote, ExpectedOptionQuote))
   }
 
@@ -62,7 +62,7 @@ class QuoteParserSuite extends FunSuite {
       "99COTAHIST.2015BOVESPA 2015123000000414179"
 
     val inputStream = new ByteArrayInputStream(quoteStream.getBytes())
-    val parsedQuotes = QuoteParser.parse(inputStream, Set(70))
+    val parsedQuotes = QuoteParser.parse(inputStream, Set(CallOption.code))
     assert(parsedQuotes == Seq(ExpectedOptionQuote))
   }
 
